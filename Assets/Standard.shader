@@ -1,19 +1,17 @@
-﻿/**
-Standard Shader:
-    [Properties]
-    [SubShader 1] LOD 300, target 3.0
-        [Pass 1] Base Forward Pass (directional light, emission, lightmaps, ...)
-        [Pass 2] Additive Forward Pass (one light per pass)
-        [Pass 3] Shadow Caster Pass
-        [Pass 4] Deferred Render Pass
-        [Pass 5] Meta Pass (Extracts information for lightmapping, GI (emission, albedo, ...)), Not used during regular rendering.
-    [SubShader 2] LOD 150, target 2.0
-        [Pass 1] Base Forward Pass
-        [Pass 2] Additive Forward Pass
-        [Pass 3] Shadow Caster Pass
-        [Pass 4] Meta Pass
-    [Fallback "VertexLit"]
-**/
+﻿// Standard Shader:
+//     [Properties]
+//     [SubShader 1] LOD 300, target 3.0
+//         [Pass 1] Base Forward Pass (directional light, emission, lightmaps, ...)
+//         [Pass 2] Additive Forward Pass (one light per pass)
+//         [Pass 3] Shadow Caster Pass
+//         [Pass 4] Deferred Render Pass
+//         [Pass 5] Meta Pass (Extracts information for lightmapping, GI (emission, albedo, ...)), Not used during regular rendering.
+//     [SubShader 2] LOD 150, target 2.0
+//         [Pass 1] Base Forward Pass
+//         [Pass 2] Additive Forward Pass
+//         [Pass 3] Shadow Caster Pass
+//         [Pass 4] Meta Pass
+//     [Fallback "VertexLit"]
 Shader "Custom/Standard" {
     Properties {
         _Color("Color", Color) = (1,1,1,1)
@@ -57,11 +55,6 @@ Shader "Custom/Standard" {
         Tags { "RenderType"="Opaque" "PerformanceChecks"="False" }
         LOD 300
 
-
-        // ---------------------------通道1----------------------------
-        // Base forward pass (directional light, emission, lightmaps, ...)
-        // 正向基础渲染通道
-        // 处理方向光，自发光，光照贴图
         Pass {
             Name "FORWARD"
             Tags { "LightMode" = "ForwardBase" }
