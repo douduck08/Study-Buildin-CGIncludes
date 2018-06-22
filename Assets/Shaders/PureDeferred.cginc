@@ -1,8 +1,8 @@
 #include "UnityCG.cginc"
 #include "UnityStandardInput.cginc"
+#include "UnityStandardConfig.cginc"
 #include "CommonCore.cginc"
 
-// #include "UnityStandardConfig.cginc"
 // #include "UnityPBSLighting.cginc"
 // #include "UnityStandardUtils.cginc"
 // #include "UnityGBuffer.cginc"
@@ -19,59 +19,6 @@ struct VertexOutputDeferred {
         float3 posWorld                   : TEXCOORD6;
     #endif
 };
-
-struct FragmentCommonData {
-    half3 diffColor, specColor;
-    // Note: smoothness & oneMinusReflectivity for optimization purposes, mostly for DX9 SM2.0 level.
-    // Most of the math is being done on these (1-x) values, and that saves a few precious ALU slots.
-    half oneMinusReflectivity, smoothness;
-    float3 normalWorld;
-    float3 eyeVec;
-    half alpha;
-    float3 posWorld;
-
-    #if UNITY_STANDARD_SIMPLE
-        half3 reflUVW;
-    #endif
-
-    #if UNITY_STANDARD_SIMPLE
-        half3 tangentSpaceNormal;
-    #endif
-};
-
-// inline FragmentCommonData SpecularSetup (float4 i_tex) {
-//     half4 specGloss = SpecularGloss(i_tex.xy);
-//     half3 specColor = specGloss.rgb;
-//     half smoothness = specGloss.a;
-
-//     half oneMinusReflectivity;
-//     half3 diffColor = EnergyConservationBetweenDiffuseAndSpecular (Albedo(i_tex), specColor, /*out*/ oneMinusReflectivity);
-
-//     FragmentCommonData o = (FragmentCommonData)0;
-//     o.diffColor = diffColor;
-//     o.specColor = specColor;
-//     o.oneMinusReflectivity = oneMinusReflectivity;
-//     o.smoothness = smoothness;
-//     return o;
-// }
-
-// inline FragmentCommonData FragmentSetup (inout float4 i_tex, float3 i_eyeVec, half3 i_viewDirForParallax, float4 tangentToWorld[3], float3 i_posWorld) {
-//     i_tex = Parallax(i_tex, i_viewDirForParallax);
-
-//     half alpha = Alpha(i_tex.xy);
-//     #if defined(_ALPHATEST_ON)
-//         clip (alpha - _Cutoff);
-//     #endif
-
-//     FragmentCommonData o = SpecularSetup (i_tex);
-//     o.normalWorld = PerPixelWorldNormal(i_tex, tangentToWorld);
-//     o.eyeVec = NormalizePerPixelNormal(i_eyeVec);
-//     o.posWorld = i_posWorld;
-
-//     // NOTE: shader relies on pre-multiply alpha-blend (_SrcBlend = One, _DstBlend = OneMinusSrcAlpha)
-//     o.diffColor = PreMultiplyAlpha (o.diffColor, alpha, o.oneMinusReflectivity, /*out*/ o.alpha);
-//     return o;
-// }
 
 VertexOutputDeferred vertDeferred (VertexInput v) {
     UNITY_SETUP_INSTANCE_ID(v);
@@ -148,28 +95,7 @@ void fragDeferred ( VertexOutputDeferred i,
 
     UNITY_APPLY_DITHER_CROSSFADE(i.pos.xy);
 
-    // IN_VIEWDIR4PARALLAX(i)
-    #if (SHADER_TARGET < 30) || UNITY_STANDARD_SIMPLE
-        half3 viewDir4Parallax = normalize(half3(i.tangentToWorldAndPackedData[0].w, i.tangentToWorldAndPackedData[1].w, i.tangentToWorldAndPackedData[2].w));
-    #else
-            // will normalize per-pixel instead
-        half3 viewDir4Parallax = half3(i.tangentToWorldAndPackedData[0].w, i.tangentToWorldAndPackedData[1].w, i.tangentToWorldAndPackedData[2].w);
-    #endif
-
-    // IN_WORLDPOS(i)
-    #if UNITY_REQUIRE_FRAG_WORLDPOS
-        #if UNITY_PACK_WORLDPOS_WITH_TANGENT
-            half3 in_worldPos =  half3(i.tangentToWorldAndPackedData[0].w, i.tangentToWorldAndPackedData[1].w, i.tangentToWorldAndPackedData[2].w);
-        #else
-            half3 in_worldPos = i.posWorld;
-        #endif
-    #else
-        half3 in_worldPos = half3(0,0,0);
-    #endif
-
-    // FRAGMENT_SETUP(s)
-    // FragmentCommonData x = FragmentSetup(i.tex, i.eyeVec, IN_VIEWDIR4PARALLAX(i), i.tangentToWorldAndPackedData, IN_WORLDPOS(i));
-    FragmentCommonData s = FragmentSetup(i.tex, i.eyeVec, viewDir4Parallax, i.tangentToWorldAndPackedData, in_worldPos);
+    FRAGMENT_SETUP(s);
 
     // no analytic lights in this pass
     UnityLight dummyLight = DummyLight ();
