@@ -35,15 +35,15 @@ define變數：
 * **UnityObjectToClipPos(float3)** 與 MVP 矩陣做運算
 
 define變數：
-* **UNITY_SETUP_INSTANCE_ID(input)**: 設定 `input.instanceID`，以及 `unity_MatrixMVP_Instanced` `unity_MatrixMV_Instanced` `unity_MatrixTMV_Instanced` `unity_MatrixITMV_Instanced`
-* **UNITY_VERTEX_OUTPUT_STEREO**: (For VR) 定義需要的 vertex ouput struct member
-* **DEFAULT_UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO**: (For VR) 初始化 output.stereoTargetEyeIndex
+* **UNITY_SETUP_INSTANCE_ID(input)** 設定 `input.instanceID`，以及 `unity_MatrixMVP_Instanced` `unity_MatrixMV_Instanced` `unity_MatrixTMV_Instanced` `unity_MatrixITMV_Instanced`
+* **UNITY_VERTEX_OUTPUT_STEREO** (For VR) 定義需要的 vertex ouput struct member
+* **DEFAULT_UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO** (For VR) 初始化 output.stereoTargetEyeIndex
 
 ### HLSLSupport.cginc
 
 efine變數：
-* **UNITY_POSITION(pos)**: 一般相當於 `float4 pos : SV_POSITION`
-* **UNITY_INITIALIZE_OUTPUT(type, name)**: 初始化參數，視平台差異補上 `name = (type)0;`
+* **UNITY_POSITION(pos)** 一般相當於 `float4 pos : SV_POSITION`
+* **UNITY_INITIALIZE_OUTPUT(type, name)** 初始化參數，視平台差異補上 `name = (type)0;`
 
 ## 獨立 library
 ### UnityStandardInput.cginc
