@@ -1,16 +1,16 @@
 #include "UnityCG.cginc"
-#include "UnityShaderVariables.cginc"
-#include "UnityInstancing.cginc"
-#include "UnityStandardConfig.cginc"
 #include "UnityStandardInput.cginc"
-#include "UnityPBSLighting.cginc"
-#include "UnityStandardUtils.cginc"
-#include "UnityGBuffer.cginc"
-#include "UnityStandardBRDF.cginc"
-#include "AutoLight.cginc"
+#include "CommonCore.cginc"
+
+// #include "UnityStandardConfig.cginc"
+// #include "UnityPBSLighting.cginc"
+// #include "UnityStandardUtils.cginc"
+// #include "UnityGBuffer.cginc"
+// #include "UnityStandardBRDF.cginc"
+// #include "AutoLight.cginc"
 
 struct VertexOutputDeferred {
-    UNITY_POSITION(pos);
+    float4 pos                            : SV_POSITION;
     float4 tex                            : TEXCOORD0;
     float3 eyeVec                         : TEXCOORD1;
     float4 tangentToWorldAndPackedData[3] : TEXCOORD2;    // [3x3:tangentToWorld | 1x3:viewDirForParallax or worldPos]
@@ -18,7 +18,6 @@ struct VertexOutputDeferred {
     #if UNITY_REQUIRE_FRAG_WORLDPOS && !UNITY_PACK_WORLDPOS_WITH_TANGENT
         float3 posWorld                   : TEXCOORD6;
     #endif
-    UNITY_VERTEX_OUTPUT_STEREO
 };
 
 struct FragmentCommonData {
@@ -40,45 +39,44 @@ struct FragmentCommonData {
     #endif
 };
 
-inline FragmentCommonData SpecularSetup (float4 i_tex) {
-    half4 specGloss = SpecularGloss(i_tex.xy);
-    half3 specColor = specGloss.rgb;
-    half smoothness = specGloss.a;
+// inline FragmentCommonData SpecularSetup (float4 i_tex) {
+//     half4 specGloss = SpecularGloss(i_tex.xy);
+//     half3 specColor = specGloss.rgb;
+//     half smoothness = specGloss.a;
 
-    half oneMinusReflectivity;
-    half3 diffColor = EnergyConservationBetweenDiffuseAndSpecular (Albedo(i_tex), specColor, /*out*/ oneMinusReflectivity);
+//     half oneMinusReflectivity;
+//     half3 diffColor = EnergyConservationBetweenDiffuseAndSpecular (Albedo(i_tex), specColor, /*out*/ oneMinusReflectivity);
 
-    FragmentCommonData o = (FragmentCommonData)0;
-    o.diffColor = diffColor;
-    o.specColor = specColor;
-    o.oneMinusReflectivity = oneMinusReflectivity;
-    o.smoothness = smoothness;
-    return o;
-}
+//     FragmentCommonData o = (FragmentCommonData)0;
+//     o.diffColor = diffColor;
+//     o.specColor = specColor;
+//     o.oneMinusReflectivity = oneMinusReflectivity;
+//     o.smoothness = smoothness;
+//     return o;
+// }
 
-inline FragmentCommonData FragmentSetup (inout float4 i_tex, float3 i_eyeVec, half3 i_viewDirForParallax, float4 tangentToWorld[3], float3 i_posWorld) {
-    i_tex = Parallax(i_tex, i_viewDirForParallax);
+// inline FragmentCommonData FragmentSetup (inout float4 i_tex, float3 i_eyeVec, half3 i_viewDirForParallax, float4 tangentToWorld[3], float3 i_posWorld) {
+//     i_tex = Parallax(i_tex, i_viewDirForParallax);
 
-    half alpha = Alpha(i_tex.xy);
-    #if defined(_ALPHATEST_ON)
-        clip (alpha - _Cutoff);
-    #endif
+//     half alpha = Alpha(i_tex.xy);
+//     #if defined(_ALPHATEST_ON)
+//         clip (alpha - _Cutoff);
+//     #endif
 
-    FragmentCommonData o = SpecularSetup (i_tex);
-    o.normalWorld = PerPixelWorldNormal(i_tex, tangentToWorld);
-    o.eyeVec = NormalizePerPixelNormal(i_eyeVec);
-    o.posWorld = i_posWorld;
+//     FragmentCommonData o = SpecularSetup (i_tex);
+//     o.normalWorld = PerPixelWorldNormal(i_tex, tangentToWorld);
+//     o.eyeVec = NormalizePerPixelNormal(i_eyeVec);
+//     o.posWorld = i_posWorld;
 
-    // NOTE: shader relies on pre-multiply alpha-blend (_SrcBlend = One, _DstBlend = OneMinusSrcAlpha)
-    o.diffColor = PreMultiplyAlpha (o.diffColor, alpha, o.oneMinusReflectivity, /*out*/ o.alpha);
-    return o;
-}
+//     // NOTE: shader relies on pre-multiply alpha-blend (_SrcBlend = One, _DstBlend = OneMinusSrcAlpha)
+//     o.diffColor = PreMultiplyAlpha (o.diffColor, alpha, o.oneMinusReflectivity, /*out*/ o.alpha);
+//     return o;
+// }
 
 VertexOutputDeferred vertDeferred (VertexInput v) {
     UNITY_SETUP_INSTANCE_ID(v);
     VertexOutputDeferred o;
     UNITY_INITIALIZE_OUTPUT(VertexOutputDeferred, o);
-    UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
     float4 posWorld = mul(unity_ObjectToWorld, v.vertex);
     #if UNITY_REQUIRE_FRAG_WORLDPOS
@@ -90,20 +88,14 @@ VertexOutputDeferred vertDeferred (VertexInput v) {
             o.posWorld = posWorld.xyz;
         #endif
     #endif
-    o.pos = UnityObjectToClipPos(v.vertex);
 
+    o.pos = UnityObjectToClipPos(v.vertex);
     o.tex = TexCoords(v);
-    // o.eyeVec = NormalizePerVertexNormal(posWorld.xyz - _WorldSpaceCameraPos);
-    #if (SHADER_TARGET < 30) || UNITY_STANDARD_SIMPLE
-        o.eyeVec = normalize(posWorld.xyz - _WorldSpaceCameraPos);
-    #else
-        o.eyeVec = posWorld.xyz - _WorldSpaceCameraPos; // will normalize per-pixel instead
-    #endif
+    o.eyeVec = NormalizePerVertexNormal(posWorld.xyz - _WorldSpaceCameraPos);
 
     float3 normalWorld = UnityObjectToWorldNormal(v.normal);
     #ifdef _TANGENT_TO_WORLD
         float4 tangentWorld = float4(UnityObjectToWorldDir(v.tangent.xyz), v.tangent.w);
-
         float3x3 tangentToWorld = CreateTangentToWorldPerVertex(normalWorld, tangentWorld.xyz, tangentWorld.w);
         o.tangentToWorldAndPackedData[0].xyz = tangentToWorld[0];
         o.tangentToWorldAndPackedData[1].xyz = tangentToWorld[1];
