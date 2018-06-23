@@ -90,5 +90,6 @@
         }
 	}
 
+    FallBack "VertexLit"
     CustomEditor "StandardShaderGUI"
 }
