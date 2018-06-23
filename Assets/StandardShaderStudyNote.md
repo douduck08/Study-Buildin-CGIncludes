@@ -5,7 +5,7 @@
 ## Deferred Path in Standard
 ### Keywords
 * _NORMALMAP
-* _ _ALPHATEST_ON _ALPHABLEND_ON _ALPHAPREMULTIPLY_ON
+* _ _ALPHATEST_ON _ALPHABLEND_ON _ALPHAPREMULTIPLY_ON (決定光照的 alpha blend 方式)
 * _EMISSION
 * _METALLICGLOSSMAP
 * _ _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
@@ -33,16 +33,25 @@
 
 在 `FragmentSetup` 中，依序進行了：
 * `Parallax()` 計算 height map
-* 若有 alpha test 在此時檢查
-* `SpecularSetup()` 計算
-* `PerPixelWorldNormal()`
-* `NormalizePerPixelNormal()`
-* `o.posWorl` 設值
-* `PreMultiplyAlpha()`
+* 若有 alpha test 在此時檢查是否要 clip
+* `SpecularSetup()` 計算 `diffColor`, `specColor`, `smooth` 與 `oneMinusReflectivity`
+* `PerPixelWorldNormal()` 計算 normal map 之下的 world space normal
+* `o.eyeVec` 設值，由 `NormalizePerPixelNormal()` 與 `NormalizePerVertexNormal()` 配合計算
+* `o.posWorld` 設值
+* `PreMultiplyAlpha()` 計算 blended alpha
 
 ### fragDeferred function
-檢查 Dither Clip 後進行 FRAGMENT_SETUP，接著計算光照。
+檢查 Dither Clip 後進行 FRAGMENT_SETUP，接著計算光照 (GI)。
 
-最後用 `UnityStandardDataToGbuffer()` 將資料轉為 GBuffer 所要的格式，以及填入 Emission Color。
+GI 的計算依序進行了：
+* 先對 `_OcclusionMap` 採樣
+* 對 Light map 採樣或者從 `i_ambientOrLightmapUV` 中取出顏色
+* 設定好 cubemap ，以及用 `UnityGlossyEnvironmentSetup()` 準備反射所需資料
+* 用 `UnityGlobalIllumination()` 計算直接光造與間接光照的所有內容，詳細內容是呼叫 "UnityGlobalIllumination.cginc" 以及 "UnityStandardBRDF.cginc" 裡的方法來計算
+* 用 BRDF1_Unity_PBS 或其他數學模型進一步計算
+* 加上 Emission Color
+* 依據開啟 HDR 與否調整顏色
+
+最後用 `UnityStandardDataToGbuffer()` 將 UnityGI 資料轉為 GBuffer 所要的格式，以及填入 Emission Color。
 
 若有開啟 ShadowMask，用 `UnityGetRawBakedOcclusions()` 計算。

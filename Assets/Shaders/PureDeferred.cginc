@@ -1,12 +1,9 @@
 #include "UnityCG.cginc"
 #include "UnityStandardInput.cginc"
 #include "UnityStandardConfig.cginc"
+#include "UnityStandardBRDF.cginc"
 #include "CommonCore.cginc"
 
-// #include "UnityPBSLighting.cginc"
-// #include "UnityStandardUtils.cginc"
-// #include "UnityGBuffer.cginc"
-// #include "UnityStandardBRDF.cginc"
 // #include "AutoLight.cginc"
 
 struct VertexOutputDeferred {
@@ -111,7 +108,7 @@ void fragDeferred ( VertexOutputDeferred i,
 
     UnityGI gi = FragmentGI (s, occlusion, i.ambientOrLightmapUV, atten, dummyLight, sampleReflectionsInDeferred);
 
-    half3 emissiveColor = UNITY_BRDF_PBS (s.diffColor, s.specColor, s.oneMinusReflectivity, s.smoothness, s.normalWorld, -s.eyeVec, gi.light, gi.indirect).rgb;
+    half3 emissiveColor = BRDF1_Unity_PBS (s.diffColor, s.specColor, s.oneMinusReflectivity, s.smoothness, s.normalWorld, -s.eyeVec, gi.light, gi.indirect).rgb;
 
     #ifdef _EMISSION
         emissiveColor += Emission (i.tex.xy);

@@ -89,4 +89,6 @@
             ENDCG
         }
 	}
+
+    CustomEditor "StandardShaderGUI"
 }
