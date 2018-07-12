@@ -51,9 +51,18 @@ GI 的計算依序進行了：
 * 先對 `_OcclusionMap` 採樣
 * 對 Light map 採樣或者從 `i_ambientOrLightmapUV` 中取出顏色
 * 設定好 cubemap ，以及用 `UnityGlossyEnvironmentSetup()` 準備反射所需資料
-* 用 `UnityGlobalIllumination()` 計算直接光造與間接光照的所有內容，詳細內容是呼叫 "UnityGlobalIllumination.cginc" 以及 "UnityStandardBRDF.cginc" 裡的方法來計算
-* 用 BRDF1_Unity_PBS 或其他數學模型進一步計算
-* 加上 Emission Color
+* 用 `UnityGlobalIllumination()` 計算直接光造與間接光照的所有內容
+    * 定義於 "UnityGlobalIllumination.cginc"
+    * 先執行 `UnityGI_Base()` 計算 UnityGI 結構
+        * 取得 Baked ShadowMask，計算更新 Attenuation
+        * 呼叫 `ShadeSHPerPixel()` 計算 Diffuse，其中包含 Light Probe，定義於 "UnityStandardUtils.cginc"
+        * 計算 LightMap
+        * 計算 Dynamic Light Map
+    * 再用 `UnityGI_IndirectSpecular()` 加上間接反射
+        * `BoxProjectedCubemapDirection()`
+        * `Unity_GlossyEnvironment()`
+* 用 `BRDF1_Unity_PBS()` 或其他數學模型進一步計算反射部分，定義於  "UnityStandardBRDF.cginc"
+* 如果有，再加上 Emission Color
 * 依據開啟 HDR 與否調整顏色
 
 最後用 `UnityStandardDataToGbuffer()` 將 UnityGI 資料轉為 GBuffer 所要的格式，以及填入 Emission Color。
