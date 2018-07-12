@@ -30,6 +30,8 @@
     [Render Transparent Geometry]
 [Camera ImageEffects]
 ```
-單純計算 `GL.Draw` 的呼叫次數，每個 Deferred 物件分別需要 3 次，每個 Forward 物件分別需要 4 次。
+單純計算 `GL.Draw` 的呼叫次數，每個 Deferred 物件分別需要 3 次，每增加一個 Light 會再需要 2 次呼叫。而每個 Forward 物件分別需要 4 次，每增加一個 Light 會再需要 3 次呼叫。
+
+因為 Light 增加部分是 Cast Shadow 全開下的結果，關閉部分物件的 Cast Shadow 增加就不會那麼劇烈。
 
 若開啟了 DepthNormals，則 `GL.Draw` 所有 Deferred 只需要 1 次(從GBuffer抓取資料)，但 Forward 需要每個物件再分別 1 次。
