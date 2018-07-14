@@ -1,4 +1,5 @@
 #include "UnityStandardInput.cginc"
+#include "UnityShaderVariables.cginc"
 
 inline half3 NormalizePerVertexNormal (float3 n) {
     // takes float to avoid overflow
@@ -121,6 +122,138 @@ inline FragmentCommonData FragmentSetup (inout float4 i_tex, float3 i_eyeVec, ha
 
 #include "UnityPBSLighting.cginc"
 
+
+
+
+half3 ShadeSHPerPixelT (half3 normal, half3 ambient, float3 worldPos)
+{
+    half3 ambient_contrib = 0.0;
+
+    #if UNITY_SAMPLE_FULL_SH_PER_PIXEL
+        // Completely per-pixel
+        #if UNITY_LIGHT_PROBE_PROXY_VOLUME
+            if (unity_ProbeVolumeParams.x == 1.0)
+                ambient_contrib = SHEvalLinearL0L1_SampleProbeVolume(half4(normal, 1.0), worldPos);
+            else
+                ambient_contrib = SHEvalLinearL0L1(half4(normal, 1.0));
+        #else
+            ambient_contrib = SHEvalLinearL0L1(half4(normal, 1.0));
+        #endif
+
+            ambient_contrib += SHEvalLinearL2(half4(normal, 1.0));
+
+            ambient += max(half3(0, 0, 0), ambient_contrib);
+
+        #ifdef UNITY_COLORSPACE_GAMMA
+            ambient = LinearToGammaSpace(ambient);
+        #endif
+    #elif (SHADER_TARGET < 30) || UNITY_STANDARD_SIMPLE
+        // Completely per-vertex
+        // nothing to do here. Gamma conversion on ambient from SH takes place in the vertex shader, see ShadeSHPerVertex.
+    #else
+        // L2 per-vertex, L0..L1 & gamma-correction per-pixel
+        // Ambient in this case is expected to be always Linear, see ShadeSHPerVertex()
+        #if UNITY_LIGHT_PROBE_PROXY_VOLUME
+            if (unity_ProbeVolumeParams.x == 1.0)
+                ambient_contrib = SHEvalLinearL0L1_SampleProbeVolume (half4(normal, 1.0), worldPos);
+            else
+                ambient_contrib.r = dot(unity_SHAr,half4(normal, 1.0));
+                ambient_contrib.g = dot(unity_SHAg,half4(normal, 1.0));
+                ambient_contrib.b = dot(unity_SHAb,half4(normal, 1.0));
+                //ambient_contrib = SHEvalLinearL0L1 (half4(normal, 1.0));
+        #else
+            ambient_contrib = SHEvalLinearL0L1 (half4(normal, 1.0));
+        #endif
+
+        ambient = max(half3(0, 0, 0), ambient+ambient_contrib);     // include L2 contribution in vertex shader before clamp.
+        #ifdef UNITY_COLORSPACE_GAMMA
+            ambient = LinearToGammaSpace (ambient);
+        #endif
+    #endif
+
+    return ambient;
+}
+
+inline UnityGI UnityGI_BaseT(UnityGIInput data, half occlusion, half3 normalWorld)
+{
+    UnityGI o_gi;
+    ResetUnityGI(o_gi);
+
+    // Base pass with Lightmap support is responsible for handling ShadowMask / blending here for performance reason
+    #if defined(HANDLE_SHADOWS_BLENDING_IN_GI)
+        half bakedAtten = UnitySampleBakedOcclusion(data.lightmapUV.xy, data.worldPos);
+        float zDist = dot(_WorldSpaceCameraPos - data.worldPos, UNITY_MATRIX_V[2].xyz);
+        float fadeDist = UnityComputeShadowFadeDistance(data.worldPos, zDist);
+        data.atten = UnityMixRealtimeAndBakedShadows(data.atten, bakedAtten, UnityComputeShadowFade(fadeDist));
+    #endif
+
+    o_gi.light = data.light;
+    o_gi.light.color *= data.atten;
+
+    #if UNITY_SHOULD_SAMPLE_SH
+        o_gi.indirect.diffuse = ShadeSHPerPixelT(normalWorld, data.ambient, data.worldPos);
+    #endif
+
+    #if defined(LIGHTMAP_ON)
+        // Baked lightmaps
+        half4 bakedColorTex = UNITY_SAMPLE_TEX2D(unity_Lightmap, data.lightmapUV.xy);
+        half3 bakedColor = DecodeLightmap(bakedColorTex);
+
+        #ifdef DIRLIGHTMAP_COMBINED
+            fixed4 bakedDirTex = UNITY_SAMPLE_TEX2D_SAMPLER (unity_LightmapInd, unity_Lightmap, data.lightmapUV.xy);
+            o_gi.indirect.diffuse += DecodeDirectionalLightmap (bakedColor, bakedDirTex, normalWorld);
+
+            #if defined(LIGHTMAP_SHADOW_MIXING) && !defined(SHADOWS_SHADOWMASK) && defined(SHADOWS_SCREEN)
+                ResetUnityLight(o_gi.light);
+                o_gi.indirect.diffuse = SubtractMainLightWithRealtimeAttenuationFromLightmap (o_gi.indirect.diffuse, data.atten, bakedColorTex, normalWorld);
+            #endif
+
+        #else // not directional lightmap
+            o_gi.indirect.diffuse += bakedColor;
+
+            #if defined(LIGHTMAP_SHADOW_MIXING) && !defined(SHADOWS_SHADOWMASK) && defined(SHADOWS_SCREEN)
+                ResetUnityLight(o_gi.light);
+                o_gi.indirect.diffuse = SubtractMainLightWithRealtimeAttenuationFromLightmap(o_gi.indirect.diffuse, data.atten, bakedColorTex, normalWorld);
+            #endif
+
+        #endif
+    #endif
+
+    #ifdef DYNAMICLIGHTMAP_ON
+        // Dynamic lightmaps
+        fixed4 realtimeColorTex = UNITY_SAMPLE_TEX2D(unity_DynamicLightmap, data.lightmapUV.zw);
+        half3 realtimeColor = DecodeRealtimeLightmap (realtimeColorTex);
+
+        #ifdef DIRLIGHTMAP_COMBINED
+            half4 realtimeDirTex = UNITY_SAMPLE_TEX2D_SAMPLER(unity_DynamicDirectionality, unity_DynamicLightmap, data.lightmapUV.zw);
+            o_gi.indirect.diffuse += DecodeDirectionalLightmap (realtimeColor, realtimeDirTex, normalWorld);
+        #else
+            o_gi.indirect.diffuse += realtimeColor;
+        #endif
+    #endif
+
+    o_gi.indirect.diffuse *= occlusion;
+    return o_gi;
+}
+
+
+inline UnityGI UnityGlobalIlluminationT (UnityGIInput data, half occlusion, half3 normalWorld)
+{
+    return UnityGI_BaseT(data, occlusion, normalWorld);
+}
+
+inline UnityGI UnityGlobalIlluminationT (UnityGIInput data, half occlusion, half3 normalWorld, Unity_GlossyEnvironmentData glossIn)
+{
+    UnityGI o_gi = UnityGI_BaseT(data, occlusion, normalWorld);
+    o_gi.indirect.specular = UnityGI_IndirectSpecular(data, occlusion, glossIn);
+    return o_gi;
+}
+
+
+
+
+
+
 inline UnityLight DummyLight () {
     UnityLight l;
     l.color = 0;
@@ -163,10 +296,10 @@ inline UnityGI FragmentGI (FragmentCommonData s, half occlusion, half4 i_ambient
             g.reflUVW = s.reflUVW;
         #endif
 
-        return UnityGlobalIllumination (d, occlusion, s.normalWorld, g);
+        return UnityGlobalIlluminationT (d, occlusion, s.normalWorld, g);
     }
     else
     {
-        return UnityGlobalIllumination (d, occlusion, s.normalWorld);
+        return UnityGlobalIlluminationT (d, occlusion, s.normalWorld);
     }
 }

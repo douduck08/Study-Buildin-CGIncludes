@@ -44,6 +44,7 @@ float4 tangentWorld = float4(UnityObjectToWorldDir(v.tangent.xyz), v.tangent.w);
 * [method] **half4 SpecularGloss(float2 uv)** 根據材質設定或 `_SpecGlossMap` 採樣，回傳 specColor 存在 rgb，並視需要在 `_MainTex` 採樣 smooth 存在 a channel
 * [method] **half2 MetallicGloss(float2 uv)** 根據材質設定或 `_MetallicGlossMap` 採樣，現在 Standard 用此方法取代 `SpecularGloss()` 
 * [method] **half Occlusion(float2 uv)** 對 `_OcclusionMap` 採樣
+* [method] **half3 Emission(float2 uv)** 若有 `_EMISSION`，則對 `_EmissionMap` 採樣
 * [define] **_TANGENT_TO_WORLD** 表示有使用 tangent 的需求
 
 ## UnityStandardConfig.cginc

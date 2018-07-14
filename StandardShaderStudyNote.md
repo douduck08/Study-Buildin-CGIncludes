@@ -134,6 +134,18 @@ struct Unity_GlossyEnvironmentData {
 };
 ```
 
+### UnityStandardData
+定義於 "UnityGBuffer.cginc"，是用於傳入 `UnityStandardDataToGbuffer()` 的結構。
+```
+struct UnityStandardData {
+    half3   diffuseColor;
+    half    occlusion;
+    half3   specularColor;
+    half    smoothness;
+    float3  normalWorld; // normal in world space
+};
+```
+
 ## Vertex Shader
 ```c
 VertexOutputDeferred vertDeferred (VertexInput v)
@@ -228,21 +240,38 @@ inline UnityGI FragmentGI (FragmentCommonData s, half occlusion, half4 i_ambient
     * 定義於 "UnityGlobalIllumination.cginc"。
     * 先執行 `UnityGI_Base()` 計算 UnityGI 結構更新。
         * 取得 Baked ShadowMask，計算更新 Attenuation。
-        * 呼叫 `ShadeSHPerPixel()` 計算 Diffuse。
+        * 呼叫 `ShadeSHPerPixel()` 計算間接 Diffuse，包含 Light Probe。
         * 計算 LightMap。
         * 計算 Dynamic Light Map。
-    * 再用 `UnityGI_IndirectSpecular()` 加上間接反射
-        * `BoxProjectedCubemapDirection()`
-        * `Unity_GlossyEnvironment()`
+    * 再用 `UnityGI_IndirectSpecular()` 加上 Reflection Probe 的反射資訊。
+        * `BoxProjectedCubemapDirection()`。
+        * `Unity_GlossyEnvironment()`。
 * `ShadeSHPerPixel()` 定義於 "UnityStandardUtils.cginc"
 
-用 `BRDF1_Unity_PBS()` 或其他數學模型進一步計算反射部分，定義於  "UnityStandardBRDF.cginc"
+呼叫 `BRDF1_Unity_PBS()` 或其他定義於 "UnityStandardBRDF.cginc" 的數學模型，計算最終光照結果。
+```c
+half4 BRDF1_Unity_PBS (half3 diffColor, half3 specColor, half oneMinusReflectivity, half smoothness, float3 normal, float3 viewDir, UnityLight light, UnityIndirect gi)
+```
 
 如果有 `_EMISSION`，計算 `emissiveColor += Emission (i.tex.xy)`。
 
 如果有 `UNITY_HDR_ON`，計算 `emissiveColor.rgb = exp2(-emissiveColor.rgb)` 調整顏色。
 
 最後用 `UnityStandardDataToGbuffer()` 將 UnityGI 資料寫入 GBuffer 以及 Emission。
+```c
+// RT0: diffuse color (rgb), occlusion (a) - sRGB rendertarget
+outGBuffer0 = half4(data.diffuseColor, data.occlusion);
+// RT1: spec color (rgb), smoothness (a) - sRGB rendertarget
+outGBuffer1 = half4(data.specularColor, data.smoothness);
+// RT2: normal (rgb), --unused, very low precision-- (a)
+outGBuffer2 = half4(data.normalWorld * 0.5f + 0.5f, 1.0f);
+```
 
 ### ShadowMask
 若有開啟 ShadowMask，用 `UnityGetRawBakedOcclusions()` 計算。
+
+```c
+outShadowMask = UnityGetRawBakedOcclusions(i.ambientOrLightmapUV.xy, IN_WORLDPOS(i));
+```
+
+`UnityGetRawBakedOcclusions()` 定義於 "UnityShadowLibrary.cginc"，其中包含 Light Map 的採樣，以及 Light Probe Volume 的相關處理等。
