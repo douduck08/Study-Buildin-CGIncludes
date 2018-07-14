@@ -52,7 +52,7 @@ float4 tangentWorld = float4(UnityObjectToWorldDir(v.tangent.xyz), v.tangent.w);
 
 ## UnityStandardUtils.cginc
 * [method] **half3x3 CreateTangentToWorldPerVertex(half3 normal, half3 tangent, half tangentSign)** 建立一個 `half3x3(tangent, binormal, normal)` 
-* [method] **half3 ShadeSHPerVertex (half3 normal, half3 ambient)** 計算 Light Probes 的頂點光照 ambient
+* [method] **half3 ShadeSHPerVertex (half3 normal, half3 ambient)** 計算頂點光照的 ambient
 
 # 光照相關
 ## UnityLightingCommon.cginc
