@@ -1,4 +1,4 @@
-﻿Shader "Custom/PureDeferred" {
+﻿Shader "Custom/Deferred" {
 	Properties {
 		_Color("Color", Color) = (1,1,1,1)
         _MainTex("Albedo", 2D) = "white" {}
@@ -84,8 +84,7 @@
 
             #pragma vertex vertDeferred
             #pragma fragment fragDeferred
-            // #include "UnityStandardCore.cginc"
-            #include "PureDeferred.cginc"
+            #include "CustomDeferred.cginc"
             ENDCG
         }
 	}

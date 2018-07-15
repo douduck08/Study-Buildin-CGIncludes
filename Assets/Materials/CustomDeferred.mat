@@ -6,8 +6,8 @@ Material:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: PureDeferred
-  m_Shader: {fileID: 4800000, guid: 7b1bf036326e41142a29f547e70ceafe, type: 3}
+  m_Name: CustomDeferred
+  m_Shader: {fileID: 4800000, guid: de2da4d49641a094bbc434b839d0daa0, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
