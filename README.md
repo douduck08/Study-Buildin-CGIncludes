@@ -1,4 +1,4 @@
-Unity version: 2017.4.2f2
+Unity version: 2018.1.2f1
 
 * [CGInclude Note](CGIncludeNote.md)
 * [StandardShader Note](StandardShaderNote.md)

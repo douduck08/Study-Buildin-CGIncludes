@@ -150,10 +150,14 @@ struct UnityStandardData {
 ```c
 VertexOutputDeferred vertDeferred (VertexInput v)
 ```
+### VR Support and GPU Instancing
+* `UNITY_SETUP_INSTANCE_ID(v)` 處理計算 unity_InstanceID，以及 MVP 相關矩陣。
+* `UNITY_TRANSFER_INSTANCE_ID(v, o)` 將 instance ID 從 input 填入 output。
+* `UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o)` 設定 VR 的左右眼資料到 output。
+
 ### 座標與UV資訊
 將 `VertexOutputDeferred` 內的資料準備好，若有 `_TANGENT_TO_WORLD` 或 `LIGHTMAP_ON` 等會產生一些變化或簡化。
 
-* `UNITY_SETUP_INSTANCE_ID(v)` 進行 instanceing 所需資料的處理。
 * `UNITY_INITIALIZE_OUTPUT(VertexOutputDeferred, o)` 會依照平台差異進行 struct 的歸零。
 * `UnityObjectToClipPos(v.vertex)` 計算 clip space 座標。
 * 用內建於  "UnityStandardInput.cginc" 的 `TexCoords()` 來執行 `TRANSFORM_TEX()`，同時填上兩組 uv。
@@ -222,6 +226,8 @@ inline FragmentCommonData FragmentSetup (inout float4 i_tex, float3 i_eyeVec, ha
 最後的 `PreMultiplyAlpha()` 可以避免從 ColorBuffer 讀取顏色，事先調整 alpha 與 diffColor。對應的 Blend 設定為 `_SrcBlend = One, _DstBlend = OneMinusSrcAlpha`，這同時也跟 Deferred Path 無法正常渲染沒有 ZWrite 的透明物件有關。
 
 完成 `FragmentCommonData` 後，建立一個 `UnityLight` 結構，並進行了歸零的初始化動作。在 Deferred Path 並不需要在這部分寫入資料，但是需要為後續的 GI 建立這個結構。
+
+另外處理 GPU Instancing 資料，必須加上 `UNITY_SETUP_INSTANCE_ID(i)`。
 
 ### 分階段進行光照 (GI) 計算
 呼叫 `Occlusion()` 來採樣 occlusion。

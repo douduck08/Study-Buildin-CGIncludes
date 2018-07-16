@@ -32,11 +32,15 @@ struct VertexOutputDeferred {
     #if UNITY_REQUIRE_FRAG_WORLDPOS && !UNITY_PACK_WORLDPOS_WITH_TANGENT
         float3 posWorld                   : TEXCOORD6;
     #endif
+    UNITY_VERTEX_INPUT_INSTANCE_ID
+    UNITY_VERTEX_OUTPUT_STEREO
 };
 
 VertexOutputDeferred vertDeferred (VertexInput v) {
-    UNITY_SETUP_INSTANCE_ID(v);
     INITIALIZE_STRUCT(VertexOutputDeferred, o);
+    UNITY_SETUP_INSTANCE_ID(v);
+    UNITY_TRANSFER_INSTANCE_ID(v, o);
+    UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
     float4 posWorld = mul(unity_ObjectToWorld, v.vertex);
     o.pos = UnityObjectToClipPos(v.vertex);
@@ -168,6 +172,8 @@ void fragDeferred (VertexOutputDeferred i,
     #else
         float3 posWorld = half3(0,0,0);
     #endif
+
+    UNITY_SETUP_INSTANCE_ID(i);
 
     // GI
     INITIALIZE_STRUCT(UnityLight, dummyLight); // prepare an empty UnityLight, but no analytic input in this pass
