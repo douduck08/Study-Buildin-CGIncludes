@@ -217,9 +217,11 @@ inline FragmentCommonData FragmentSetup (inout float4 i_tex, float3 i_eyeVec, ha
 * `PerPixelWorldNormal()` 採樣 normal map 後計算 world space normal。
 * `o.eyeVec` 的設值，於 `NormalizePerPixelNormal()` 內決定定是否 normalize。
 * `o.posWorld` 的設值。
-* 最後的 `PreMultiplyAlpha()` 是為了避免從 ColorBuffer 讀取顏色，事先調整 alpha 與 diffColor。
+* 進行 `PreMultiplyAlpha()` 計算。
 
-完成 `FragmentCommonData` 後，建立一個 `UnityLight` 結構，並進行了歸零的初始化動作。
+最後的 `PreMultiplyAlpha()` 可以避免從 ColorBuffer 讀取顏色，事先調整 alpha 與 diffColor。對應的 Blend 設定為 `_SrcBlend = One, _DstBlend = OneMinusSrcAlpha`，這同時也跟 Deferred Path 無法正常渲染沒有 ZWrite 的透明物件有關。
+
+完成 `FragmentCommonData` 後，建立一個 `UnityLight` 結構，並進行了歸零的初始化動作。在 Deferred Path 並不需要在這部分寫入資料，但是需要為後續的 GI 建立這個結構。
 
 ### 分階段進行光照 (GI) 計算
 呼叫 `Occlusion()` 來採樣 occlusion。

@@ -8,9 +8,9 @@ struct PBSCommonData {
     // Most of the math is being done on these (1-x) values, and that saves a few precious ALU slots.
     half oneMinusReflectivity, smoothness;
 
-    float3 normalWorld;
-    float3 viewDir;
-    float3 posWorld;
+    // float3 normalWorld;
+    // float3 viewDir;
+    // float3 posWorld;
 
     // #if UNITY_STANDARD_SIMPLE
     //     half3 reflUVW;

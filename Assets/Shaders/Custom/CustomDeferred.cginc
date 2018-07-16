@@ -198,7 +198,7 @@ void fragDeferred (VertexOutputDeferred i,
     data.occlusion      = occlusion;
     data.specularColor  = pbsData.specColor;
     data.smoothness     = pbsData.smoothness;
-    data.normalWorld    = pbsData.normalWorld;
+    data.normalWorld    = normalWorld;
 
     UnityStandardDataToGbuffer(data, outGBuffer0, outGBuffer1, outGBuffer2);
 

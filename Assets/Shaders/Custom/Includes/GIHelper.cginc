@@ -1,6 +1,10 @@
 #ifndef GI_HELPER_INCLUDED
 #define GI_HELPER_INCLUDED
 
+#include "UnityStandardInput.cginc"
+#include "UnityShaderVariables.cginc"
+#include "UnityPBSLighting.cginc"
+
 // Prepare UnityGIInput for UnityGlobalIllumination()
 inline UnityGIInput PrepareUnityGIInput(float3 posWorld, float3 viewDir, half occlusion, half4 i_ambientOrLightmapUV, half atten, UnityLight light) {
     UnityGIInput d;
