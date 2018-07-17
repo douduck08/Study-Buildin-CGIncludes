@@ -5,6 +5,8 @@
 
 > KeyWords 中的 `_` 似乎不論數量都是相同的意思。
 
+# Standard Deferred Shader 的內容
+
 ## Keywords
 * _NORMALMAP
 * _ _ALPHATEST_ON _ALPHABLEND_ON _ALPHAPREMULTIPLY_ON (決定光照的 alpha blend 方式)
@@ -14,8 +16,6 @@
 * _ _SPECULARHIGHLIGHTS_OFF
 * ___ _DETAIL_MULX2
 * _PARALLAXMAP
-
-# Standard Deferred Shader 的內容
 
 ## 一些 build-in define
 定義在 "UnityStandardInput.cginc" 中，決定了透過 Keywords 開啟的功能是否要對應開啟某段 shader 功能
