@@ -205,7 +205,7 @@ void fragDeferred ( VertexOutputDeferred i,
 )
 ```
 ### Dither Clip
-呼叫 `UNITY_APPLY_DITHER_CROSSFADE()` 檢查 Dither Clip。
+呼叫 `UNITY_APPLY_DITHER_CROSSFADE()` 檢查 Dither Clip，這是 LOD Cross Fade 所需要的部分。
 
 ### FragmentCommonData 的計算
 接著呼叫 `FRAGMENT_SETUP()` 來計算準備 `FragmentCommonData`，實際對應的方法與內容為：
