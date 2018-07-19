@@ -84,7 +84,7 @@
 
             #pragma vertex vertDeferred
             #pragma fragment fragDeferred
-            #include "CustomDeferred.cginc"
+            #include "Includes/DeferredCore.cginc"
             ENDCG
         }
 	}

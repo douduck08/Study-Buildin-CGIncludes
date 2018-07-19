@@ -28,18 +28,23 @@
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o)
 #define SETUP_INSTANCE_DATA_PIXEL(i) UNITY_SETUP_INSTANCE_ID(i)
 
-// Setup point in different space
-#define SETUP_POSITION_IN_WORLD(name) float4 name = mul(unity_ObjectToWorld, v.vertex)
-#define SETUP_NORMAL_IN_WORLD(name) float3 name = UnityObjectToWorldNormal(v.normal)
-#define SETUP_TANGENT_IN_WORLD(name) float4 name = float4(UnityObjectToWorldDir(v.tangent.xyz), v.tangent.w)
+// Setup point/vector in different space
+//   POSITION_IN_WORLD   | float4
+//   NORMAL_IN_WORLD     | float3
+//   TANGENT_IN_WORLD    | float4
+//   BINORMAL_IN_WORLD   | float3
+//   BINORMAL_IN_OBJECT  | float3
+// ** Should be uesd in vertext shader with vertex data input being named as `v`.
+#define POSITION_IN_WORLD mul(unity_ObjectToWorld, v.vertex)
+#define NORMAL_IN_WORLD UnityObjectToWorldNormal(v.normal)
+#define TANGENT_IN_WORLD float4(UnityObjectToWorldDir(v.tangent.xyz), v.tangent.w)
+#define BINORMAL_IN_WORLD(normalWorld, tangentWorld) cross(normalWorld, tangentWorld.xyz) * tangentWorld.w * unity_WorldTransformParams.w
+
+#define BINORMAL_IN_OBJECT cross(normalize(v.normal), normalize(v.tangent.xyz) ) * v.tangent.w
 
 // Calculate transform matrix in different space
-#define GET_TANGENT_TO_WORLD_ROTATION(normalWorld, tangentWorld, name) \
-    float3 binormalWorld = cross(normalWorld, tangentWorld.xyz) * tangentWorld.w * unity_WorldTransformParams.w; \
-    float3x3 name = float3x3(tangentWorld.xyz, binormalWorld, normalWorld)
-
-#define GET_OBJECT_TO_TANGENT_ROTATION(vertex, name) \
-    float3 binormal = cross(normalize(vertex.normal), normalize(vertex.tangent.xyz) ) * vertex.tangent.w; \
-    float3x3 name = float3x3(vertex.tangent.xyz, binormal, vertex.normal)
+inline float3x3 GetObjectToTangentRotation(float3 normal, float4 tangent, float3 binormal) {
+    return float3x3(tangent.xyz, binormal, normal);
+}
 
 #endif // COMMON_CG_INCLUDED
