@@ -53,7 +53,8 @@ inline UnityGIInput PrepareUnityGIInput (PBSCommonData data, half4 i_ambientOrLi
 
 inline UnityGIInput PrepareUnityGIInput (PBSCommonData data, half4 i_ambientOrLightmapUV) {
     UnityLight dummyLight; // prepare an empty UnityLight, but no analytic input in this pass
-    UNITY_INITIALIZE_OUTPUT(UnityLight, dummyLight);
+    dummyLight.color = 0;
+    dummyLight.dir = half3 (0,1,0);
     return PrepareUnityGIInput (data.posWorld, data.viewDir, data.occlusion, i_ambientOrLightmapUV, 1, dummyLight);
 }
 
