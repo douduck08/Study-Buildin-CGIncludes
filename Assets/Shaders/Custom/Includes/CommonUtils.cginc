@@ -1,0 +1,6 @@
+#ifndef COMMON_UTILS_INCLUDED
+#define COMMON_UTILS_INCLUDED
+
+#define NOTMAL_TO_COLOR(normal) normal * 0.5 + 0.5
+
+#endif // COMMON_UTILS_INCLUDED
