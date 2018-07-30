@@ -2,7 +2,7 @@
 #define DEFERRED_CORE_INCLUDED
 
 #include "CommonCG.cginc"
-#include "LightingHelper.cginc"
+#include "StandardGIHelper.cginc"
 
 // -------------------------------------------------------------------
 // Define data structure VertOutputDeferred

@@ -2,50 +2,37 @@
 #define FULL_REWRITE_INCLUDED
 
 #include "UnityCG.cginc"
+#include "Includes/CommonUtils.cginc"
 
-struct VertInput {
-    float4 vertex   : POSITION;
-    half3 normal    : NORMAL;
-    float2 uv0      : TEXCOORD0;
-    float2 uv1      : TEXCOORD1;
-#if defined(DYNAMICLIGHTMAP_ON) || defined(UNITY_PASS_META)
-    float2 uv2      : TEXCOORD2;
-#endif
-#ifdef _TANGENT_TO_WORLD
-    half4 tangent   : TANGENT;
-#endif
-    UNITY_VERTEX_INPUT_INSTANCE_ID
-};
-
-struct VertOutput {
+struct v2f {
     float4 pos : SV_POSITION;
     float4 tex : TEXCOORD0;
+    UNITY_VERTEX_INPUT_INSTANCE_ID
+    UNITY_VERTEX_OUTPUT_STEREO
 };
 
-void vert (VertInput v, out VertOutput o) {
-    UNITY_INITIALIZE_OUTPUT (VertOutput, o);
+void vert (appdata_full v, out v2f o) {
+    UNITY_INITIALIZE_OUTPUT (v2f, o);
+    UNITY_SETUP_INSTANCE_ID(v);
+    UNITY_TRANSFER_INSTANCE_ID(v, o);
+    UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
     o.pos = UnityObjectToClipPos(v.vertex);
 }
 
 float4 _Color;
 
 // forward path
-float4 fragForward (VertOutput i) : SV_TARGET {
+float4 fragForward (v2f i) : SV_TARGET {
+    UNITY_SETUP_INSTANCE_ID(i);
+
     return _Color;
 }
 
 // deferred path
-struct FragOutputDeferred {
-    half4 outGBuffer0 : SV_Target0;
-    half4 outGBuffer1 : SV_Target1;
-    half4 outGBuffer2 : SV_Target2;
-    half4 outEmission : SV_Target3;    // RT3: emission (rgb), --unused-- (a)
-#if defined(SHADOWS_SHADOWMASK) && (UNITY_ALLOWED_MRT_COUNT > 4)
-    half4 outShadowMask : SV_Target4;  // RT4: shadowmask (rgba)
-#endif
-};
+void fragDeferred (v2f i, out FragOutputDeferred o) {
+    UNITY_SETUP_INSTANCE_ID(i);
 
-void fragDeferred (VertOutput i, out FragOutputDeferred o) {
     UNITY_INITIALIZE_OUTPUT (FragOutputDeferred, o);
     o.outGBuffer0 = half4(_Color.rgb, 0);
     o.outGBuffer1 = half4(0, 0, 0, 0.5);

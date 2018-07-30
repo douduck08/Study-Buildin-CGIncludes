@@ -2,19 +2,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TestLightProbe : MonoBehaviour {
+public class DumpMoving : MonoBehaviour {
 
     public Vector3 pointA;
     public Vector3 pointB;
     public float speed = 1f;
 
-    Renderer rendererCache;
-
     float t = 0f;
-
-    void Start () {
-        rendererCache = GetComponent<Renderer> ();
-    }
 
     void Update () {
         t += Time.deltaTime * speed;

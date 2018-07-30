@@ -1,5 +1,5 @@
-#ifndef LIGHTING_HELPER_INCLUDED
-#define LIGHTING_HELPER_INCLUDED
+#ifndef STANDARD_GI_HELPER_INCLUDED
+#define STANDARD_GI_HELPER_INCLUDED
 
 #include "UnityCG.cginc"
 #include "UnityStandardInput.cginc"
@@ -83,4 +83,4 @@ inline UnityGI GlobalIllumination (UnityGIInput data, half occlusion, half3 norm
     return o_gi;
 }
 
-#endif // LIGHTING_HELPER_INCLUDED
+#endif // STANDARD_GI_HELPER_INCLUDED
