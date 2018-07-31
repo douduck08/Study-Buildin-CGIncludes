@@ -1,6 +1,10 @@
 #ifndef DEFERRED_CORE_INCLUDED
 #define DEFERRED_CORE_INCLUDED
 
+#include "UnityCG.cginc"
+#include "UnityStandardConfig.cginc"
+#include "UnityStandardInput.cginc"
+
 #include "CommonCG.cginc"
 #include "StandardGIHelper.cginc"
 
@@ -107,35 +111,12 @@ float3 UnpackedNormalInWorld (float4 tex, float4 tangentToWorld[3]) {
 #endif
 
 // -------------------------------------------------------------------
-// Define data structure FragOutputDeferred
+// Define helper for FragOutputDeferred
 // -------------------------------------------------------------------
 // Data info of GBuffer
 // RT0: diffuse color (rgb), occlusion (a) - sRGB rendertarget
 // RT1: spec color (rgb), smoothness (a) - sRGB rendertarget
 // RT2: normal (rgb), --unused, very low precision-- (a)
-
-struct FragOutputDeferred {
-    half4 outGBuffer0 : SV_Target0;
-    half4 outGBuffer1 : SV_Target1;
-    half4 outGBuffer2 : SV_Target2;
-    half4 outEmission : SV_Target3;    // RT3: emission (rgb), --unused-- (a)
-#if defined(SHADOWS_SHADOWMASK) && (UNITY_ALLOWED_MRT_COUNT > 4)
-    half4 outShadowMask : SV_Target4;  // RT4: shadowmask (rgba)
-#endif
-};
-
-inline FragOutputDeferred DummyFragOutputDeferred () {
-    FragOutputDeferred o;
-    UNITY_INITIALIZE_OUTPUT(FragOutputDeferred, o);
-    o.outGBuffer0 = 1;
-    o.outGBuffer1 = 1;
-    o.outGBuffer2 = 0;
-    o.outEmission = 0;
-#if defined(SHADOWS_SHADOWMASK) && (UNITY_ALLOWED_MRT_COUNT > 4)
-    o.outShadowMask = 1;
-#endif
-    return o;
-}
 
 inline FragOutputDeferred SetupFragOutputDeferred (PBSCommonData data, half4 emissiveColor) {
     FragOutputDeferred o;
@@ -201,7 +182,7 @@ void vertDeferred (VertexInput v, out VertOutputDeferred o) {
 
 void fragDeferred (VertOutputDeferred i, out FragOutputDeferred o) {
     #if (SHADER_TARGET < 30)
-        o = DummyFragOutputDeferred();
+        SetupDummyData(/*out*/o)
         return;
     #endif
 

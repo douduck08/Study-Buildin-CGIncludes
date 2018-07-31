@@ -1,6 +1,8 @@
 ﻿Shader "Custom/Full Rewrite" {
     Properties {
         _Color ("Color", Color) = (1, 1, 1, 1)
+        _MainTex ("Main Texture", 2D) = "white" {}
+        _DetailTex ("Detail Texture", 2D) = "white" {}
     }
     SubShader {
         Tags { "RenderType"="Opaque" }
