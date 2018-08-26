@@ -1,5 +1,5 @@
 # 拆解 Standard Surface Shader 為 Unlit Shader
-首先轉成 Unlit Shader，內容為：[Standard.shader](Assets/Shaders/Standard.shader)。
+首先轉成 Unlit Shader，內容為：[Standard.shader](Assets/Shaders/UnlitStd/Standard.shader)。
 
 中間的許多 Keywords 是由 CustomEditor "StandardShaderGUI" 進行變動的，切換模式或開啟貼圖等都相當於套用不同的 Shader。
 

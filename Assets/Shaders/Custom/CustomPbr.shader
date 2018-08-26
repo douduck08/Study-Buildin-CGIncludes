@@ -1,4 +1,4 @@
-﻿Shader "Custom/Full Rewrite" {
+﻿Shader "Custom/Custom Pbr" {
     Properties {
         _Color ("Color", Color) = (1, 1, 1, 1)
         _MainTex ("Main Texture", 2D) = "white" {}
@@ -16,21 +16,21 @@
             #pragma target 3.0
             #pragma vertex vert
             #pragma fragment fragForward
-            #include "Full_Rewrite.cginc"
+            #include "CustomPbr.cginc"
             ENDCG
         }
 
-        Pass {
-            Name "DEFERRED"
-            Tags { "LightMode" = "Deferred" }
+        // Pass {
+        //     Name "DEFERRED"
+        //     Tags { "LightMode" = "Deferred" }
 
-            CGPROGRAM
-            #pragma target 3.0
-            #pragma vertex vert
-            #pragma fragment fragDeferred
-            #include "Full_Rewrite.cginc"
-            ENDCG
-        }
+        //     CGPROGRAM
+        //     #pragma target 3.0
+        //     #pragma vertex vert
+        //     #pragma fragment fragDeferred
+        //     #include "CustomPbr.cginc"
+        //     ENDCG
+        // }
     }
 
     FallBack "VertexLit"
