@@ -5,8 +5,8 @@
 #include "UnityStandardConfig.cginc"
 #include "UnityStandardInput.cginc"
 
-#include "CommonCG.cginc"
-#include "StandardGIHelper.cginc"
+#include "../Includes/CommonCG.cginc"
+#include "../Includes/StandardGIHelper.cginc"
 
 // -------------------------------------------------------------------
 // Define data structure VertOutputDeferred

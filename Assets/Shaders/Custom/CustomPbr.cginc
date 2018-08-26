@@ -2,6 +2,7 @@
 #define CUSTOM_PBR_INCLUDED
 
 #include "UnityCG.cginc"
+#include "../Includes/CommonCG.cginc"
 
 struct v2f {
     float4 pos : SV_POSITION;
@@ -39,7 +40,7 @@ float4 fragForward (v2f i) : SV_TARGET {
 
     i.normal = normalize(i.normal);
     
-    return color;
+    return float4(NOTMAL_TO_COLOR(i.normal), 1);
 }
 
 #endif // CUSTOM_PBR_INCLUDED

@@ -6,7 +6,7 @@ Material:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: Full_Rewrite
+  m_Name: MyPbr
   m_Shader: {fileID: 4800000, guid: 29b7f1546c29fbc4f8d4aad1ea15f559, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4

@@ -33,5 +33,5 @@
         // }
     }
 
-    FallBack "VertexLit"
+    // FallBack "VertexLit"
 }
