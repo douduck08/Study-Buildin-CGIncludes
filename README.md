@@ -7,4 +7,4 @@ Shader files of different versions can be found at: https://unity3d.com/get-unit
 ### Note
 * [CGInclude Note](CGIncludeNote.md)
 * [Deferred Shader Note](DeferredShaderNote.md)
-* [Deferred Path Note](DeferredPathNote.md)
+* [Pbr Note](PbrNote.md)

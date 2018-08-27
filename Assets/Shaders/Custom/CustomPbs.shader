@@ -1,6 +1,8 @@
 ﻿Shader "Custom/Custom Pbr" {
     Properties {
         _Color ("Color", Color) = (1, 1, 1, 1)
+        [Gamma] _Metallic ("Metallic", Range(0, 1)) = 0
+        _Smoothness ("Smoothness", Range(0, 1)) = 0.5
         _MainTex ("Main Texture", 2D) = "white" {}
         _DetailTex ("Detail Texture", 2D) = "white" {}
     }
@@ -15,8 +17,8 @@
             CGPROGRAM
             #pragma target 3.0
             #pragma vertex vert
-            #pragma fragment fragForward
-            #include "CustomPbr.cginc"
+            #pragma fragment fragForwardPbs
+            #include "CustomPbs.cginc"
             ENDCG
         }
 
@@ -28,7 +30,7 @@
         //     #pragma target 3.0
         //     #pragma vertex vert
         //     #pragma fragment fragDeferred
-        //     #include "CustomPbr.cginc"
+        //     #include "CustomPbs.cginc"
         //     ENDCG
         // }
     }
