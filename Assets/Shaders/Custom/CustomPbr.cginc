@@ -2,6 +2,8 @@
 #define CUSTOM_PBR_INCLUDED
 
 #include "UnityCG.cginc"
+#include "UnityStandardBRDF.cginc"
+
 #include "../Includes/CommonCG.cginc"
 
 struct v2f {
@@ -40,7 +42,10 @@ float4 fragForward (v2f i) : SV_TARGET {
 
     i.normal = normalize(i.normal);
     
-    return float4(NOTMAL_TO_COLOR(i.normal), 1);
+    // return float4(NOTMAL_TO_COLOR(i.normal), 1);
+    float3 lightDir = _WorldSpaceLightPos0.xyz;
+    float3 lightColor = _LightColor0.rgb;
+    return color * float4(lightColor, 1) * saturate(dot(lightDir, i.normal));
 }
 
 #endif // CUSTOM_PBR_INCLUDED
