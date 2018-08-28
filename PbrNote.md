@@ -4,21 +4,58 @@
 * Metallic
 * Smoothness (Invert of Roughness)
 
-## Direct light
+## Realtime lighting
+### Diffuse
+* Per pixel light, used on important light.
+```c
+// Per pixel light
+float3 lightDir = _WorldSpaceLightPos0.xyz;
+float3 lightColor = _LightColor0.rgb;
+float3 diffuse = albedo * lightColor * saturate(dot(lightDir, i.normal));
+```
+* Per vertex light, only for point light, support 4 light.
+```c
+// Per vertex light (compute in vertex, add into indirect diffuse in fragment)
+float3 lightPos = float3(unity_4LightPosX0.x, unity_4LightPosY0.x, unity_4LightPosZ0.x);
+float3 lightVec = lightPos - o.worldPos;
+float3 lightDir = normalize(lightVec);
+float ndotl = saturate(dot(o.normal, lightDir));
+float atten = 1 / (1 + dot(lightVec, lightVec) * unity_4LightAtten0.x);
+vertexLightColor = unity_LightColor[0].rgb * ndotl * atten;
+// or use buildin method
+o.vertexLightColor = Shade4PointLights(
+    unity_4LightPosX0, unity_4LightPosY0, unity_4LightPosZ0,
+    unity_LightColor[0].rgb, unity_LightColor[1].rgb, unity_LightColor[2].rgb, unity_LightColor[3].rgb,
+    unity_4LightAtten0, i.worldPos, i.normal
+);
+```
+* Other indirect light diffuse (skybox, light probes)
+```c
+// Spherical Harmonics (Skybox lighting)
+indirectLight.diffuse += max(0, ShadeSH9(float4(i.normal, 1)));
+```
+
 ### Specular
 * Specular Power - depence on gloss, `exp2(10 * gloss + 1)`
 * Phong model vs Blinn-Phong model
 ```c
 // Phong model
 float3 reflDir = reflect(-lightDir, i.normal);
-float3 spec = albedo * pow(saturate(dot(viewDir, reflDir)), _Smoothness * 128);
+float3 spec = specColor * pow(saturate(dot(viewDir, reflDir)), _Smoothness * 128);
 // Blinn-Phong model
 float3 halfDir = normalize(lightDir + viewDir);
-float3 spec = albedo * pow(saturate(dot(halfDir, i.normal)), _Smoothness * 128);
+float3 spec = specColor * pow(saturate(dot(halfDir, i.normal)), _Smoothness * 128);
 ```
-### Diffuse
 
-## Indirect light (Image Based Lighting)
+### Using unity buildin method to compute PBS model lighting
+```c
+// Energy Conservation
+albedo = DiffuseAndSpecularFromMetallic(albedo, _Metallic, /*out*/specColor, /*out*/oneMinusReflectivity);
+// PBS model (Diffuse + Specular)
+outputColor = UNITY_BRDF_PBS(albedo, specColor, oneMinusReflectivity, _Smoothness, i.normal, viewDir, light, indirectLight);
+```
+
+## Backed lighting (Image Based Lighting)
 ### Reflection (Specular cubemap)
 ### Radiance environment cubemap 
 

@@ -16,8 +16,28 @@
 
             CGPROGRAM
             #pragma target 3.0
+            #pragma multi_compile _ VERTEXLIGHT_ON
+            
             #pragma vertex vert
-            #pragma fragment fragForwardPbs
+            #pragma fragment fragForwardBase
+            #define FORWARD_BASE_PASS
+            #include "CustomPbs.cginc"
+            ENDCG
+        }
+
+        Pass {
+            Name "FORWARDAdd"
+            Tags { "LightMode" = "ForwardAdd" }
+            Blend One One
+            ZWrite Off
+
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma multi_compile_fwdadd
+            // #pragma multi_compile DIRECTIONAL DIRECTIONAL_COOKIE POINT POINT_COOKIE SPOT
+
+            #pragma vertex vert
+            #pragma fragment fragForwardBase
             #include "CustomPbs.cginc"
             ENDCG
         }
