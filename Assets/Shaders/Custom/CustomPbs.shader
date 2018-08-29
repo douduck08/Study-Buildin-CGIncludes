@@ -4,7 +4,11 @@
         [Gamma] _Metallic ("Metallic", Range(0, 1)) = 0
         _Smoothness ("Smoothness", Range(0, 1)) = 0.5
         _MainTex ("Main Texture", 2D) = "white" {}
+        [NoScaleOffset] _NormalMap ("Normal Map", 2D) = "bump" {}
+        _NormalScale ("Normal Scale", Float) = 1
         _DetailTex ("Detail Texture", 2D) = "white" {}
+        [NoScaleOffset] _DetailNormalMap ("Detail Normal Map", 2D) = "bump" {}
+        _DetailNormalScale ("Detail Normal Scale", Float) = 1
     }
     SubShader {
         Tags { "RenderType"="Opaque" }
