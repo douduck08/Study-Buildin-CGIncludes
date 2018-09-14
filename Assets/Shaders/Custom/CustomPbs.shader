@@ -21,7 +21,8 @@
             CGPROGRAM
             #pragma target 3.0
             #pragma multi_compile _ VERTEXLIGHT_ON
-            
+            #pragma multi_compile _ SHADOWS_SCREEN
+
             #pragma vertex vert
             #pragma fragment fragForwardBase
             #define FORWARD_BASE_PASS
@@ -37,12 +38,26 @@
 
             CGPROGRAM
             #pragma target 3.0
-            #pragma multi_compile_fwdadd
+            #pragma multi_compile_fwdadd_fullshadows
+            // #pragma multi_compile_fwdadd
             // #pragma multi_compile DIRECTIONAL DIRECTIONAL_COOKIE POINT POINT_COOKIE SPOT
 
             #pragma vertex vert
             #pragma fragment fragForwardBase
             #include "CustomPbs.cginc"
+            ENDCG
+        }
+
+        Pass {
+            Tags { "LightMode" = "ShadowCaster" }
+
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma multi_compile_shadowcaster
+
+            #pragma vertex vertShadow
+            #pragma fragment fragShadow
+            #include "CustomShadow.cginc"
             ENDCG
         }
 

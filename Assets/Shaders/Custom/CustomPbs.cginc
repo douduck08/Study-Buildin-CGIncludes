@@ -1,9 +1,8 @@
 #ifndef CUSTOM_PBS_INCLUDED
 #define CUSTOM_PBS_INCLUDED
 
-#include "UnityCG.cginc"
-#include "AutoLight.cginc"
 #include "UnityPBSLighting.cginc"
+#include "AutoLight.cginc"
 
 #include "../Includes/CommonCG.cginc"
 
@@ -18,8 +17,12 @@ struct v2f {
         float3 binormal : TEXCOORD3;
     #endif
     float3 worldPos : TEXCOORD4;
+    SHADOW_COORDS(5)
+    // #if defined(SHADOWS_SCREEN)
+    //     float4 shadowCoordinates : TEXCOORD5;
+    // #endif
     #if defined(VERTEXLIGHT_ON)
-        float3 vertexLightColor : TEXCOORD5;
+        float3 vertexLightColor : TEXCOORD6;
     #endif
     UNITY_VERTEX_INPUT_INSTANCE_ID
     UNITY_VERTEX_OUTPUT_STEREO
@@ -59,13 +62,21 @@ void vert (appdata_full v, out v2f o) {
     o.uv.xy = TRANSFORM_TEX(v.texcoord, _MainTex);
     o.uv.zw = TRANSFORM_TEX(v.texcoord, _DetailTex);
     o.normal = UnityObjectToWorldNormal(v.normal);
+
     #if defined(BINORMAL_PER_FRAGMENT)
         o.tangent = float4(UnityObjectToWorldDir(v.tangent.xyz), v.tangent.w);
     #else
         o.tangent = UnityObjectToWorldDir(v.tangent.xyz);
         o.binormal = cross(o.normal, o.tangent) * v.tangent.w * unity_WorldTransformParams.w;
     #endif
+
     o.worldPos = mul(unity_ObjectToWorld, v.vertex);
+
+    TRANSFER_SHADOW(o);
+    // #if defined(SHADOWS_SCREEN) 
+    //     o.shadowCoordinates = ComputeScreenPos(o.pos);
+    // #endif
+
     #if defined(VERTEXLIGHT_ON)
         ComputeVertexLightColor(/*inout*/o);
     #endif
@@ -80,9 +91,14 @@ UnityLight CreateLight (v2f i) {
         light.dir = _WorldSpaceLightPos0.xyz;
     #endif
 
-    UNITY_LIGHT_ATTENUATION(atten, 0, i.worldPos);
-    light.color = _LightColor0.rgb * atten;
+    UNITY_LIGHT_ATTENUATION(atten, i, i.worldPos);
+    // #if defined(SHADOWS_SCREEN)
+    //     float atten = tex2D(_ShadowMapTexture, i.shadowCoordinates.xy / i.shadowCoordinates.w);
+    // #else
+    //     UNITY_LIGHT_ATTENUATION(atten, 0, i.worldPos);
+    // #endif
 
+    light.color = _LightColor0.rgb * atten;
     light.ndotl = saturate(dot(i.normal, light.dir));
     return light;
 }
