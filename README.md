@@ -7,7 +7,7 @@ Shader files of different versions can be found at: https://unity3d.com/get-unit
 ### Note
 * [CGInclude Note](CGIncludeNote.md)
 * [Deferred Shader Note](DeferredShaderNote.md)
-* [Pbr Note](PbrNote.md)
+* [Pbr Lighting Note](PbrNote.md)
 
 ### Others
 * https://github.com/Unity-Technologies/UnityCsReference/blob/master/Editor/Mono/Inspector/StandardShaderGUI.cs
