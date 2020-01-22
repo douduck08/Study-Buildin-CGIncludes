@@ -1,9 +1,9 @@
-# 拆解 Standard Surface Shader 為 Unlit Shader
-首先轉成 Unlit Shader，內容為：[Standard.shader](Assets/Shaders/UnlitStd/Standard.shader)。
+# 拆解 Standard Shader
+從 Unity 官方網站可以下載到的內建資源包中，可以找到 Vertex/Fragment Shader 格式的 Standard Shader。
 
-中間的許多 Keywords 是由 CustomEditor "StandardShaderGUI" 進行變動的，切換模式或開啟貼圖等都相當於套用不同的 Shader。
+另外也有材質球介面的程式碼 CustomEditor "StandardShaderGUI"，可以知道中間的許多 Keywords 是如何進行變動的，用於切換不同的貼圖格式或開啟特定功能貼圖等。
 
-> KeyWords 中的 `_` 似乎不論數量都是相同的意思。
+> 根據官方開發者回應，雖然沒有文件說明，但 KeyWords 中的 `_` 似乎不論數量都是相同的意思。
 
 # Standard Deferred Shader 的內容
 
@@ -63,7 +63,7 @@ struct VertexOutputDeferred {
 ```
 
 ### FragmentCommonData
-定義了 fragment shader 中需要的一些資料，會在 shader 中呼叫 `FRAGMENT_SETUP ()` 來計算準備。
+定義了 fragment shader 中需要的一些資料，會在 shader 中呼叫 `FRAGMENT_SETUP ()` 來計算轉換、貼圖採樣等。
 ```c
 struct FragmentCommonData {
     half3 diffColor, specColor;
@@ -161,9 +161,9 @@ VertexOutputDeferred vertDeferred (VertexInput v)
 * `UNITY_INITIALIZE_OUTPUT(VertexOutputDeferred, o)` 會依照平台差異進行 struct 的歸零。
 * `UnityObjectToClipPos(v.vertex)` 計算 clip space 座標。
 * 用內建於  "UnityStandardInput.cginc" 的 `TexCoords()` 來執行 `TRANSFORM_TEX()`，同時填上兩組 uv。
-* `NormalizePerVertexNormal()` 會依據平台來決定是否立即計算 normalize，或者留到 fragment shader 中計算。
-* `UnityObjectToWorldNormal(v.normal)` 計算 normal，再依照 `_TANGENT_TO_WORLD` 來決定後續處理。
-* 用內建於 "UnityStandardUtils.cginc" 的 `CreateTangentToWorldPerVertex()` 可用於建立 tangent to wprld matrix。
+* `NormalizePerVertexNormal()` 會依據平台來決定是否立即進行 normalize，或者留到 fragment shader 中計算。
+* `UnityObjectToWorldNormal(v.normal)` 計算 normal，再依照 `_TANGENT_TO_WORLD` 來決定是否需要計算完整的 tangent space 轉換矩陣。
+* 用內建於 "UnityStandardUtils.cginc" 的 `CreateTangentToWorldPerVertex()` 可用於建立 tangent to world matrix。
 
 ### 光照所需資訊
 處理 Light Map 或動態光照的片段：
@@ -177,10 +177,11 @@ VertexOutputDeferred vertDeferred (VertexInput v)
     o.ambientOrLightmapUV.zw = v.uv2.xy * unity_DynamicLightmapST.xy + unity_DynamicLightmapST.zw;
 #endif
 ```
-* `ShadeSHPerVertex()` 會計算逐頂點光照，儲存到 `ambientOrLightmapUV.rgb` 中備用。
+* `ShadeSHPerVertex()` 會計算逐頂點光照，以及 light probe 的採樣，儲存到 `ambientOrLightmapUV.rgb` 中備用。
+* 反之使用 lightmap 時，會計算不同 lightmap 所需要的 uv。
 
 ### ViewDir in Tangent space
-當有次級貼圖要使用時，會事先計算在 tangent space 下的視線方向：
+當有相關貼圖需要使用時，會事先計算在 tangent space 下的視線方向：
 ```c
 #ifdef _PARALLAXMAP
     TANGENT_SPACE_ROTATION;
@@ -215,26 +216,26 @@ inline FragmentCommonData FragmentSetup (inout float4 i_tex, float3 i_eyeVec, ha
 * `Parallax()` 計算 height map 下 uv 的變化平移。
 * 若有 `_ALPHATEST_ON`，執行 `clip (alpha - _Cutoff)`。
 * `MetallicSetup()` 計算 `diffColor`, `specColor`, `smooth` 與 `oneMinusReflectivity`，其中：
-  * `MetallicGloss()` 對 metallic 與 smoothness 進行採樣，定義於 "UnityStandardInput.cginc"。
+  * `MetallicGloss()` 對 metallic 與 smoothness 進行貼圖採樣，定義於 "UnityStandardInput.cginc"。
   * `Albedo()` 對兩張貼圖顏色進行採樣，定義於 "UnityStandardInput.cginc"。
-  * `DiffuseAndSpecularFromMetallic()` 計算了  `diffColor`, `specColor` 與 `oneMinusReflectivity`，定義於 "UnityStandardUtils.cginc"。
+  * `DiffuseAndSpecularFromMetallic()` 計算了 `diffColor`, `specColor` 與 `oneMinusReflectivity` 等 PBS 基本參數，定義於 "UnityStandardUtils.cginc"。
 * `PerPixelWorldNormal()` 採樣 normal map 後計算 world space normal。
-* `o.eyeVec` 的設值，於 `NormalizePerPixelNormal()` 內決定定是否 normalize。
+* `o.eyeVec` 的設值，於 `NormalizePerPixelNormal()` 內會根據平台決定定是否 normalize。
 * `o.posWorld` 的設值。
 * 進行 `PreMultiplyAlpha()` 計算。
 
-最後的 `PreMultiplyAlpha()` 可以避免從 ColorBuffer 讀取顏色，事先調整 alpha 與 diffColor。對應的 Blend 設定為 `_SrcBlend = One, _DstBlend = OneMinusSrcAlpha`，這同時也跟 Deferred Path 無法正常渲染沒有 ZWrite 的透明物件有關。
+最後的 `PreMultiplyAlpha()` 可以避免從 ColorBuffer 讀取顏色，事先調整 alpha 與 diffColor。對應的 Blend 設定為 `_SrcBlend = One, _DstBlend = OneMinusSrcAlpha`。
 
-完成 `FragmentCommonData` 後，建立一個 `UnityLight` 結構，並進行了歸零的初始化動作。在 Deferred Path 並不需要在這部分寫入資料，但是需要為後續的 GI 建立這個結構。
+### PBS 光照的直照光資料
+完成 `FragmentCommonData` 後，建立一個 `UnityLight` 結構來儲存直照光資訊，並進行了歸零的初始化動作。在 Deferred Path 並不需要在這部分寫入資料，但是因為與 Forward 共用計算函數，仍需要這個結構。
 
-另外處理 GPU Instancing 資料，必須加上 `UNITY_SETUP_INSTANCE_ID(i)`。
+### Instancing
+計算 GPU Instancing 所需資料，必須加上 `UNITY_SETUP_INSTANCE_ID(i)`。
 
-### 分階段進行光照 (GI) 計算
-呼叫 `Occlusion()` 來採樣 occlusion。
-
-依照 `UNITY_ENABLE_REFLECTION_BUFFERS` 與否來初始化 `bool sampleReflectionsInDeferred` 的值。
-
-呼叫 `FragmentGI()` 進行詳細計算，回傳一個 `UnityGI` 結構作為結果：
+### 分階段進行，間接光照 (GI) 計算
+* 呼叫 `Occlusion()` 來採樣 occlusion。
+* 依照 `UNITY_ENABLE_REFLECTION_BUFFERS` 與否來初始化 `bool sampleReflectionsInDeferred` 的值。
+* 呼叫 `FragmentGI()` 進行詳細計算，回傳一個 `UnityGI` 結構作為結果：
 ```c
 inline UnityGI FragmentGI (FragmentCommonData s, half occlusion, half4 i_ambientOrLightmapUV, half atten, UnityLight light, bool reflections)
 ```
@@ -244,7 +245,7 @@ inline UnityGI FragmentGI (FragmentCommonData s, half occlusion, half4 i_ambient
 * 用 `UnityGlossyEnvironmentSetup()` 計算 `Unity_GlossyEnvironmentData`：
     * `g.roughness = 1 - smoothness`
     * `g.reflUVW = reflect(-worldViewDir, Normal);`
-* 用 `UnityGlobalIllumination()` 計算直接光造與間接光照的內容：
+* 用 `UnityGlobalIllumination()` 計算部分直接光與全部間接光的內容：
     * 定義於 "UnityGlobalIllumination.cginc"。
     * 先執行 `UnityGI_Base()` 計算 UnityGI 結構更新。
         * 取得 Baked ShadowMask，計算更新 Attenuation。
@@ -256,16 +257,15 @@ inline UnityGI FragmentGI (FragmentCommonData s, half occlusion, half4 i_ambient
         * `Unity_GlossyEnvironment()`。
 * `ShadeSHPerPixel()` 定義於 "UnityStandardUtils.cginc"
 
-呼叫 `BRDF1_Unity_PBS()` 或其他定義於 "UnityStandardBRDF.cginc" 的數學模型，計算最終光照結果。
+### PBS 光照的最後計算
+呼叫 `BRDF1_Unity_PBS()` 或其他定義於 "UnityStandardBRDF.cginc" 的數學模型，計算最終光照結果。因為Deferred path 在此階段還沒有渲染主要的直照光，所以回傳結果以間接光為主。
 ```c
 half4 BRDF1_Unity_PBS (half3 diffColor, half3 specColor, half oneMinusReflectivity, half smoothness, float3 normal, float3 viewDir, UnityLight light, UnityIndirect gi)
 ```
 
-如果有 `_EMISSION`，計算 `emissiveColor += Emission (i.tex.xy)`。
-
-如果有 `UNITY_HDR_ON`，計算 `emissiveColor.rgb = exp2(-emissiveColor.rgb)` 調整顏色。
-
-最後用 `UnityStandardDataToGbuffer()` 將 UnityGI 資料寫入 GBuffer 以及 Emission。
+* 如果有 `_EMISSION`，計算 `emissiveColor += Emission (i.tex.xy)`。
+* 如果有 `UNITY_HDR_ON`，計算 `emissiveColor.rgb = exp2(-emissiveColor.rgb)` 調整顏色。
+* 最後用 `UnityStandardDataToGbuffer()` 將 UnityGI 資料寫入 GBuffer 以及 Emission。
 ```c
 // RT0: diffuse color (rgb), occlusion (a) - sRGB rendertarget
 outGBuffer0 = half4(data.diffuseColor, data.occlusion);
@@ -276,7 +276,7 @@ outGBuffer2 = half4(data.normalWorld * 0.5f + 0.5f, 1.0f);
 ```
 
 ### ShadowMask
-若有開啟 ShadowMask，用 `UnityGetRawBakedOcclusions()` 計算。
+若有開啟 ShadowMask，用 `UnityGetRawBakedOcclusions()` 進行採樣。
 
 ```c
 outShadowMask = UnityGetRawBakedOcclusions(i.ambientOrLightmapUV.xy, IN_WORLDPOS(i));
