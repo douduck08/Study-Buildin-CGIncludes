@@ -226,13 +226,13 @@ inline FragmentCommonData FragmentSetup (inout float4 i_tex, float3 i_eyeVec, ha
 
 最後的 `PreMultiplyAlpha()` 可以避免從 ColorBuffer 讀取顏色，事先調整 alpha 與 diffColor。對應的 Blend 設定為 `_SrcBlend = One, _DstBlend = OneMinusSrcAlpha`。
 
-### PBS 光照的直照光資料
-完成 `FragmentCommonData` 後，建立一個 `UnityLight` 結構來儲存直照光資訊，並進行了歸零的初始化動作。在 Deferred Path 並不需要在這部分寫入資料，但是因為與 Forward 共用計算函數，仍需要這個結構。
-
 ### Instancing
 計算 GPU Instancing 所需資料，必須加上 `UNITY_SETUP_INSTANCE_ID(i)`。
 
-### 分階段進行，間接光照 (GI) 計算
+### PBS 光照的直照光資料
+完成 `FragmentCommonData` 後，建立一個 `UnityLight` 結構來儲存直照光資訊，並進行了歸零的動作。在 Deferred Path 並不需要在這部分寫入資料，但是因為與 Forward 共用計算函數，仍需要這個結構。
+
+### 間接光照 GI 計算
 * 呼叫 `Occlusion()` 來採樣 occlusion。
 * 依照 `UNITY_ENABLE_REFLECTION_BUFFERS` 與否來初始化 `bool sampleReflectionsInDeferred` 的值。
 * 呼叫 `FragmentGI()` 進行詳細計算，回傳一個 `UnityGI` 結構作為結果：
@@ -244,7 +244,7 @@ inline UnityGI FragmentGI (FragmentCommonData s, half occlusion, half4 i_ambient
 * 設定好 Reflection Probe 相關資料到結構中。
 * 用 `UnityGlossyEnvironmentSetup()` 計算 `Unity_GlossyEnvironmentData`：
     * `g.roughness = 1 - smoothness`
-    * `g.reflUVW = reflect(-worldViewDir, Normal);`
+    * `g.reflUVW = reflect(-worldViewDir, Normal);` 採樣反射球。
 * 用 `UnityGlobalIllumination()` 計算部分直接光與全部間接光的內容：
     * 定義於 "UnityGlobalIllumination.cginc"。
     * 先執行 `UnityGI_Base()` 計算 UnityGI 結構更新。
@@ -255,7 +255,7 @@ inline UnityGI FragmentGI (FragmentCommonData s, half occlusion, half4 i_ambient
     * 再用 `UnityGI_IndirectSpecular()` 加上 Reflection Probe 的反射資訊。
         * `BoxProjectedCubemapDirection()`。
         * `Unity_GlossyEnvironment()`。
-* `ShadeSHPerPixel()` 定義於 "UnityStandardUtils.cginc"
+* 回傳 UnityGI。
 
 ### PBS 光照的最後計算
 呼叫 `BRDF1_Unity_PBS()` 或其他定義於 "UnityStandardBRDF.cginc" 的數學模型，計算最終光照結果。因為Deferred path 在此階段還沒有渲染主要的直照光，所以回傳結果以間接光為主。
